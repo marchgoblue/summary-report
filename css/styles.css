@@ -208,12 +208,21 @@ a:hover { text-decoration: underline; }
 /* rows flowing into two columns inside full-width cards */
 .rows.cols-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: repeat(var(--nrows, 1), auto);
   grid-auto-flow: column;
   column-gap: 48px;
   position: relative;
 }
+/* let rows shrink inside their track so the trailing graph button
+   stays inside the card (canvas sparkline compresses instead) */
+.rows.cols-2 .row { min-width: 0; }
+.rows.cols-2 .r-spark { min-width: 0; overflow: hidden; }
+.rows.cols-2 .sparkline { max-width: 100%; }
+.rows.cols-2 .row .r-name { flex-basis: 146px; }
+.rows.cols-2 .row .r-value { flex-basis: 100px; }
+.rows.cols-2 .row .r-time { flex-basis: 60px; }
+.rows.cols-2 { column-gap: clamp(24px, 3.5vw, 48px); }
 .rows.cols-2::before {
   content: ''; position: absolute; left: 50%; top: 4px; bottom: 4px;
   width: 1px; background: var(--border); opacity: .7;
