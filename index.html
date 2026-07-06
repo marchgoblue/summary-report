@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Summary Report — SMART on FHIR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M22 12h-4l-3 8-4-16-3 8H2' fill='none' stroke='%232563eb' stroke-width='2.4' stroke-linecap='round'/></svg>" />
+
+  <!-- Third-party (CDN, no build step) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fhirclient@2.5.3/build/fhir-client.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header id="banner" class="banner"></header>
+    <nav id="tabs" class="tabs" aria-label="Report tabs"></nav>
+    <div id="timebar" class="timebar"></div>
+    <section id="graph-tray"></section>
+    <main id="page"></main>
+    <footer class="foot">
+      Summary Report · SMART on FHIR (R4) demo · Simulated patient — not real health information ·
+      <a href="https://github.com/marchgoblue/summary-report" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+  </div>
+
+  <!-- App (load order matters: utils → mock → data → components → graph → tabs → app) -->
+  <script src="js/utils.js"></script>
+  <script src="js/mock-patient.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/chart-panel.js"></script>
+  <script src="js/tabs/icu.js"></script>
+  <script src="js/tabs/cardio.js"></script>
+  <script src="js/tabs/id.js"></script>
+  <script src="js/tabs/quality.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
