@@ -33,6 +33,26 @@
     el.addEventListener('mouseleave', () => { if (tipEl) tipEl.style.display = 'none'; });
   };
 
+  /* ---------- provenance / honesty helpers ---------- */
+  const SITE_TIP = 'Available from Epic via flowsheet-mapped Observations or an Epic-specific interface. Requires per-site configuration — not vanilla FHIR R4.';
+
+  ui.siteBadge = function () {
+    const b = U.h('span.pill.site', 'site-configured');
+    ui.attachTip(b, SITE_TIP);
+    return b;
+  };
+
+  ui.derived = function (tip) {
+    const b = U.h('span.pill.derived', 'ƒ derived');
+    ui.attachTip(b, tip || 'Computed in the app from FHIR data — deterministic rules, nothing leaves the browser.');
+    return b;
+  };
+
+  /* Provenance line for a catalog entry */
+  ui.provOf = function (cat) {
+    return cat.src || (cat.loinc ? 'Source: FHIR Observation · LOINC ' + cat.loinc : 'Derived in app from FHIR data');
+  };
+
   /* ---------- collapsible / customizable section card ---------- */
   ui.section = function (opts) {
     // opts: {id, title, color, count, page, half}
@@ -48,6 +68,7 @@
       U.h('span.drag-handle', { html: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="5" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="8" cy="19" r="1.6"/><circle cx="16" cy="5" r="1.6"/><circle cx="16" cy="12" r="1.6"/><circle cx="16" cy="19" r="1.6"/></svg>' }),
       U.h('span.sec-dot', { style: 'background:' + (opts.color || 'var(--accent)') }),
       U.h('span.card-title', opts.title),
+      opts.site ? ui.siteBadge() : null,
       opts.count != null ? U.h('span.card-count', String(opts.count)) : null,
       U.h('span.head-right',
         U.h('button.eye-btn', {
@@ -124,6 +145,8 @@
       valEl = U.h('span.r-value', { style: 'color:var(--text-3);font-weight:500' }, '—');
     }
 
+    const nameEl = U.h('span.r-name', cat.label, opts.sub ? U.h('span.r-sub', opts.sub) : null);
+    ui.attachTip(nameEl, ui.provOf(cat));
     row.append(
       U.h('button.eye-btn', {
         title: 'Include / exclude',
@@ -135,7 +158,7 @@
         },
         html: eyeSvg()
       }),
-      U.h('span.r-name', cat.label, opts.sub ? U.h('span.r-sub', opts.sub) : null),
+      nameEl,
       valEl,
       U.h('span.r-time', last ? U.fmtAgo(last.t) : ''),
       U.h('span.r-spark', U.sparkline(
@@ -188,7 +211,7 @@
       };
       const tr = U.h('tr', { dataset: { rowid: key } });
       if (hiddenRows.has(key)) tr.classList.add('hidden-row');
-      tr.appendChild(U.h('td.lab-name',
+      const nameTd = U.h('td.lab-name',
         U.h('button.eye-btn', {
           title: 'Include / exclude',
           onclick: () => {
@@ -199,7 +222,9 @@
           },
           html: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>'
         }),
-        cat.label, U.h('span.lab-unit', cat.unit || '')));
+        cat.label, U.h('span.lab-unit', cat.unit || ''));
+      ui.attachTip(nameTd, ui.provOf(cat));
+      tr.appendChild(nameTd);
       for (let i = 0; i < nCols; i++) {
         const a = win.start + i * colMs, b = a + colMs;
         let v = null;
@@ -275,11 +300,12 @@
 
   /* ---------- stat tile ---------- */
   ui.tile = function (opts) {
-    // {label, value, unit, sub, tone, graphKey}
+    // {label, value, unit, sub, tone, graphKey, source, site}
     const t = U.h('div.tile' + (opts.tone ? '.' + opts.tone : ''),
-      U.h('div.t-label', opts.label),
+      U.h('div.t-label', opts.label, opts.site ? ui.siteBadge() : null),
       U.h('div.t-value', String(opts.value), opts.unit ? U.h('span.t-unit', ' ' + opts.unit) : null),
       opts.sub ? U.h('div.t-sub', opts.sub) : null);
+    if (opts.source) ui.attachTip(t, opts.source);
     if (opts.graphKey) t.appendChild(SR.graph.button(opts.graphKey));
     return t;
   };

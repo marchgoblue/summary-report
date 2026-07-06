@@ -26,7 +26,7 @@
       const diet = data.dietOrders().filter(d => !d.end || d.end > now).slice(-1)[0] || data.dietOrders().slice(-1)[0];
       const tiles = U.h('div.tiles');
       tiles.append(
-        ui.tile({ label: 'Code Status', value: cs.status, sub: 'documented ' + U.fmtDay(cs.documented), tone: 'good' }),
+        ui.tile({ label: 'Code Status', value: cs.status, sub: 'documented ' + U.fmtDay(cs.documented), tone: 'good', site: true, source: 'Code status is not part of standard FHIR R4 — surfacing it requires an Epic-specific interface, configured per site.' }),
         ui.tile({ label: 'Current Diet', value: diet ? diet.order : '—', sub: diet ? diet.detail : '' }),
         ui.tile({ label: 'Last BM', value: lastBm ? U.fmtAgo(lastBm.t) : 'none documented', sub: lastBm ? lastBm.desc : '', tone: bmAgeH > 72 ? 'alert' : bmAgeH > 48 ? 'warn' : 'good' }),
         ui.tile({ label: 'Central Line', value: cvc ? ((now - cvc.placed) / U.DAY).toFixed(1) + ' days' : 'None', sub: cvc ? cvc.site : '', tone: cvc && (now - cvc.placed) / U.DAY > 5 ? 'warn' : cvc ? '' : 'good' }),
@@ -55,9 +55,19 @@
       pud.appendChild(U.h('div.q-line',
         U.h('span.q-k', 'Pantoprazole 40 mg IV daily'),
         U.h('span.q-v', U.h('span.pill.ok', 'ACTIVE since ' + U.fmtDay(SR.mock.T(3))))));
+      /* Candidate indications computed from FHIR data, not authored:
+         vent >48h from device timestamps, shock from MAR pressor records,
+         DAPT from active antiplatelet orders */
+      const ett = data.devices().find(d => /Endotracheal/i.test(d.name));
+      const ventHrs = ett ? ((ett.removed || now) - ett.placed) / U.HOUR : 0;
+      const hadPressors = data.meds().some(m => m.cls === 'Vasopressor');
+      const dapt = data.activeOrders().filter(o => o.cls === 'Antiplatelet').length >= 2;
       pud.appendChild(U.h('div.q-line',
-        U.h('span.q-k', 'Indication'),
-        U.h('span.q-v', 'Mechanical ventilation >48h, shock, DAPT')));
+        U.h('span.q-k', { style: 'display:flex;align-items:center;gap:4px' }, 'Supporting factors', ui.derived('Each factor computed from FHIR data: ventilation duration from device timestamps, vasopressor exposure from MedicationAdministration, DAPT from active MedicationRequests.')),
+        U.h('span.q-v', { style: 'font-weight:500;font-size:12px' },
+          [ventHrs > 48 ? 'ventilated ' + Math.round(ventHrs) + 'h ✓' : null,
+            hadPressors ? 'vasopressor exposure ✓' : null,
+            dapt ? 'on DAPT ✓' : null].filter(Boolean).join(' · ') || 'none detected')));
       grid.append(dvt, pud);
       s.body.appendChild(grid);
       sections.push(Object.assign(s, { id: 'ppx' }));
@@ -65,7 +75,7 @@
 
     /* --- Bowel regimen --- */
     (function () {
-      const s = ui.section({ id: 'bowel', title: 'Bowel Regimen', color: '#b58a5d', page: PAGE });
+      const s = ui.section({ id: 'bowel', title: 'Bowel Regimen', color: '#b58a5d', page: PAGE, site: true });
       const bms = data.bowelMovements();
       const grid = U.h('div.q-grid');
       const left = U.h('div');
@@ -117,14 +127,14 @@
       s.body.appendChild(U.h('div', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3);margin:8px 0 2px' }, 'Diabetes medications ordered'));
       data.activeOrders().filter(o => o.cls === 'Insulin').forEach(o =>
         s.body.appendChild(U.h('div.q-line', U.h('span.q-k', o.name), U.h('span.q-v', U.h('span.pill.ok', 'ACTIVE since ' + U.fmtDay(o.started))))));
-      s.body.appendChild(U.h('div.q-line', U.h('span.q-k', 'Home metformin'), U.h('span.q-v', U.h('span.pill.neutral', 'HELD — AKI/contrast'))));
+      s.body.appendChild(U.h('div.q-line', U.h('span.q-k', 'Home metformin'), U.h('span.q-v', U.h('span.pill.neutral', 'ON HOLD (order status)'))));
       sections.push(Object.assign(s, { id: 'glucose' }));
     })();
 
     /* --- LDAs --- */
     (function () {
       const devs = data.devices();
-      const s = ui.section({ id: 'lda', title: 'Lines, Drains & Airways (LDAs)', color: '#7c3aed', count: devs.filter(d => !d.removed).length + ' active', page: PAGE, half: true });
+      const s = ui.section({ id: 'lda', title: 'Lines, Drains & Airways (LDAs)', color: '#7c3aed', count: devs.filter(d => !d.removed).length + ' active', page: PAGE, half: true, site: true });
       devs.slice().sort((a, b) => (a.removed ? 1 : 0) - (b.removed ? 1 : 0)).forEach(d => {
         const active = !d.removed;
         const dwell = ((d.removed || now) - d.placed) / U.DAY;
@@ -132,7 +142,7 @@
           U.h('div.lda-icon' + (active ? '' : '.removed'), { html: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M5 9l7-7 7 7"/></svg>' }),
           U.h('div',
             U.h('div.lda-name', d.name),
-            U.h('div.lda-sub', d.site + (d.note ? ' · ' + d.note : ''))),
+            U.h('div.lda-sub', d.site)),
           U.h('div.lda-right',
             active
               ? U.h('span.pill.' + (dwell > 5 ? 'warn' : 'info'), 'IN · day ' + dwell.toFixed(1) + (dwell > 5 ? ' — review necessity' : ''))

@@ -51,6 +51,8 @@
     const host = document.getElementById('banner');
     host.innerHTML = '';
     const initials = p.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const codeEl = metaItem('Code Status', SR.data.codeStatus().status);
+    SR.ui.attachTip(codeEl, 'Code status is not part of standard FHIR R4 — surfacing it requires an Epic-specific interface, configured per site.');
     host.append(
       U.h('div.avatar', initials),
       U.h('div',
@@ -61,7 +63,7 @@
       U.h('div.pt-meta',
         metaItem('Admitted', U.fmtDateTime(p.admitted) + ' (day ' + Math.ceil((SR.data.now() - p.admitted) / U.DAY) + ')'),
         metaItem('Attending', p.attending || '—'),
-        metaItem('Code Status', SR.data.codeStatus().status),
+        codeEl,
         U.h('div.meta-item',
           U.h('div.meta-label', 'Allergies'),
           U.h('div', { style: 'display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;justify-content:flex-end' },

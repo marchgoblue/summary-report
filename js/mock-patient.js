@@ -40,20 +40,20 @@
     temp:  { label: 'Temperature', unit: '°C', loinc: '8310-5', group: 'Vitals', dp: 1, lo: 36, hi: 38, critHi: 39.5, color: '#e0705d' },
     rr:    { label: 'Resp Rate', unit: '/min', loinc: '9279-1', group: 'Vitals', dp: 0, lo: 10, hi: 22, critHi: 32, color: '#5da8e0' },
     spo2:  { label: 'SpO₂', unit: '%', loinc: '59408-5', group: 'Vitals', dp: 0, lo: 92, critLo: 88, color: '#4fb3a5' },
-    cvp:   { label: 'CVP', unit: 'mmHg', loinc: '60985-9', group: 'Hemodynamics', dp: 0, lo: 2, hi: 10, color: '#8d6fd1' },
+    cvp:   { label: 'CVP', unit: 'mmHg', loinc: '60985-9', group: 'Hemodynamics', dp: 0, lo: 2, hi: 10, color: '#8d6fd1', src: 'Observation (flowsheet row) — site-configured' },
     weight:{ label: 'Weight', unit: 'kg', loinc: '29463-7', group: 'Vitals', dp: 1, color: '#7a8aa0' },
 
-    /* Ventilator / respiratory support */
-    fio2:  { label: 'FiO₂', unit: '%', loinc: '3150-0', group: 'Respiratory', dp: 0, hi: 60, color: '#5d8de0' },
-    peep:  { label: 'PEEP', unit: 'cmH₂O', loinc: '76248-7', group: 'Respiratory', dp: 0, color: '#6e9ad4' },
+    /* Ventilator / respiratory support — flowsheet rows, site-configured */
+    fio2:  { label: 'FiO₂', unit: '%', loinc: '3150-0', group: 'Respiratory', dp: 0, hi: 60, color: '#5d8de0', src: 'Observation (flowsheet row) · LOINC 3150-0 — site-configured' },
+    peep:  { label: 'PEEP', unit: 'cmH₂O', loinc: '76248-7', group: 'Respiratory', dp: 0, color: '#6e9ad4', src: 'Observation (flowsheet row) — site-configured' },
 
-    /* Drips (dose series) */
-    norepi: { label: 'Norepinephrine', unit: 'mcg/kg/min', group: 'Drips', dp: 2, color: '#c74d6e', step: true },
-    vasopressin: { label: 'Vasopressin', unit: 'units/min', group: 'Drips', dp: 2, color: '#a05dbf', step: true },
-    insulinGtt: { label: 'Insulin infusion', unit: 'units/hr', group: 'Drips', dp: 1, color: '#4d8bc7', step: true },
-    propofol: { label: 'Propofol', unit: 'mcg/kg/min', group: 'Drips', dp: 0, color: '#8a9bb0', step: true },
-    heparinGtt: { label: 'Heparin infusion', unit: 'units/hr', group: 'Drips', dp: 0, color: '#5a6fbf', step: true },
-    lasixGtt: { label: 'Furosemide infusion', unit: 'mg/hr', group: 'Drips', dp: 0, color: '#3f9e7d', step: true },
+    /* Drips (dose series) — sourced from MAR rate documentation */
+    norepi: { label: 'Norepinephrine', unit: 'mcg/kg/min', group: 'Drips', dp: 2, color: '#c74d6e', step: true, src: 'MedicationAdministration — MAR rate documentation' },
+    vasopressin: { label: 'Vasopressin', unit: 'units/min', group: 'Drips', dp: 2, color: '#a05dbf', step: true, src: 'MedicationAdministration — MAR rate documentation' },
+    insulinGtt: { label: 'Insulin infusion', unit: 'units/hr', group: 'Drips', dp: 1, color: '#4d8bc7', step: true, src: 'MedicationAdministration — MAR rate documentation' },
+    propofol: { label: 'Propofol', unit: 'mcg/kg/min', group: 'Drips', dp: 0, color: '#8a9bb0', step: true, src: 'MedicationAdministration — MAR rate documentation' },
+    heparinGtt: { label: 'Heparin infusion', unit: 'units/hr', group: 'Drips', dp: 0, color: '#5a6fbf', step: true, src: 'MedicationAdministration — MAR rate documentation' },
+    lasixGtt: { label: 'Furosemide infusion', unit: 'mg/hr', group: 'Drips', dp: 0, color: '#3f9e7d', step: true, src: 'MedicationAdministration — MAR rate documentation' },
 
     /* Hematology */
     wbc:   { label: 'WBC', unit: '×10³/µL', loinc: '6690-2', group: 'Hematology', dp: 1, lo: 4, hi: 11, critHi: 30, color: '#d16fb0' },
@@ -82,6 +82,8 @@
     /* Cardiac / inflammatory */
     trop:  { label: 'Troponin I', unit: 'ng/mL', loinc: '10839-9', group: 'Cardiac', dp: 2, hi: 0.04, critHi: 1, color: '#d1493f' },
     bnp:   { label: 'BNP', unit: 'pg/mL', loinc: '30934-4', group: 'Cardiac', dp: 0, hi: 100, color: '#3f6fd1' },
+    lvef:  { label: 'LVEF', unit: '%', loinc: '10230-1', group: 'Cardiac', dp: 0, lo: 50, color: '#3f8ad1', src: 'Observation · LOINC 10230-1 — discrete EF where site-configured' },
+    vancTrough: { label: 'Vancomycin trough', unit: 'µg/mL', loinc: '20578-1', group: 'Drug Levels', dp: 1, lo: 10, hi: 20, color: '#8a5dd1' },
     lactate: { label: 'Lactate', unit: 'mmol/L', loinc: '2524-7', group: 'Inflammatory', dp: 1, hi: 2, critHi: 4, color: '#d1763f' },
     crp:   { label: 'CRP', unit: 'mg/L', loinc: '1988-5', group: 'Inflammatory', dp: 1, hi: 8, color: '#d13f8a' },
     pct:   { label: 'Procalcitonin', unit: 'ng/mL', loinc: '33959-8', group: 'Inflammatory', dp: 2, hi: 0.25, critHi: 2, color: '#a03fd1' },
@@ -91,11 +93,11 @@
     pco2:  { label: 'pCO₂ (art)', unit: 'mmHg', loinc: '2019-8', group: 'Blood Gas', dp: 0, lo: 35, hi: 45, color: '#3fc0d1' },
     po2:   { label: 'pO₂ (art)', unit: 'mmHg', loinc: '2703-7', group: 'Blood Gas', dp: 0, lo: 80, hi: 100, color: '#3fd1b8' },
 
-    /* Fluids (agg=sum when bucketing) */
-    urine: { label: 'Urine output', unit: 'mL', loinc: '9187-6', group: 'Fluids', dp: 0, agg: 'sum', color: '#d9c23e' },
-    intake:{ label: 'Intake (all)', unit: 'mL', loinc: '8999-5', group: 'Fluids', dp: 0, agg: 'sum', color: '#4d9ec7' },
-    net:   { label: 'Net balance', unit: 'mL', group: 'Fluids', dp: 0, agg: 'sum', color: '#7a8aa0' },
-    ngout: { label: 'NG output', unit: 'mL', group: 'Fluids', dp: 0, agg: 'sum', color: '#a3b53f' }
+    /* Fluids (agg=sum when bucketing) — flowsheet-row Observations, site-configured */
+    urine: { label: 'Urine output', unit: 'mL', loinc: '9187-6', group: 'Fluids', dp: 0, agg: 'sum', color: '#d9c23e', src: 'Observation (flowsheet row) · LOINC 9187-6 — site-configured' },
+    intake:{ label: 'Intake (all)', unit: 'mL', loinc: '8999-5', group: 'Fluids', dp: 0, agg: 'sum', color: '#4d9ec7', src: 'Observation (flowsheet row) — site-configured' },
+    net:   { label: 'Net balance', unit: 'mL', group: 'Fluids', dp: 0, agg: 'sum', color: '#7a8aa0', src: 'Derived in app: intake − urine output − drain output' },
+    ngout: { label: 'NG output', unit: 'mL', group: 'Fluids', dp: 0, agg: 'sum', color: '#a3b53f', src: 'Observation (flowsheet row) — site-configured' }
   };
 
   /* ============================================================
@@ -173,6 +175,13 @@
   series.co2 = genScheduled(labHours(6), [[0, 14], [12, 16], [24, 19], [48, 21], [76, 22], [100, 26], [148, 27]], 1);
   series.bun = genScheduled(labHours(12), [[0, 38], [24, 52], [48, 64], [76, 68], [100, 61], [124, 49], [148, 38]], 2);
   series.cr = genScheduled(labHours(12), [[0, 2.1], [24, 2.9], [48, 3.4], [60, 3.5], [76, 3.2], [100, 2.7], [124, 2.2], [148, 1.8]], 0.08);
+  /* Pre-admission outpatient creatinines — Epic's Observation API returns
+     historical results, which is what lets the app COMPUTE a true baseline */
+  series.cr = [
+    { t: T(-6480), v: 1.24 },   // ~9 months before admission
+    { t: T(-3240), v: 1.31 },   // ~4.5 months
+    { t: T(-980), v: 1.28 }     // ~6 weeks
+  ].concat(series.cr);
   series.gluc = (function () {
     const hrs = [];
     for (let h = 1; h <= 72; h += 1) hrs.push(h);          // q1h on insulin gtt
@@ -192,6 +201,11 @@
   series.lactate = genScheduled([0.5, 3, 6, 9, 12, 18, 24, 36, 48, 76, 100], [[0, 5.8], [3, 4.9], [6, 3.6], [9, 2.8], [12, 2.2], [18, 1.7], [24, 1.4], [48, 1.2], [100, 0.9]], 0.15, { min: 0.5 });
   series.crp = genScheduled(dailyHours, [[0, 187], [28, 246], [52, 214], [76, 152], [100, 98], [124, 61], [148, 38]], 8);
   series.pct = genScheduled(dailyHours, [[0, 38.4], [28, 44.2], [52, 21.7], [76, 8.3], [100, 2.9], [124, 1.1], [148, 0.4]], 0.5, { min: 0.05 });
+
+  /* Discrete LVEF observations (LOINC 10230-1) — prior TTE + this admission */
+  series.lvef = [{ t: T(-5300), v: 30 }, { t: T(57), v: 27 }];
+  /* Vancomycin trough drawn before 4th dose */
+  series.vancTrough = [{ t: T(37), v: 14.2 }];
 
   series.ph = genScheduled([0.5, 2, 6, 12, 24, 47, 75, 80, 96, 121], [[0, 7.18], [2, 7.24], [6, 7.29], [12, 7.33], [24, 7.36], [47, 7.35], [75, 7.31], [80, 7.36], [96, 7.39], [121, 7.42]], 0.01);
   series.pco2 = genScheduled([0.5, 2, 6, 12, 24, 47, 75, 80, 96, 121], [[0, 30], [6, 36], [24, 38], [75, 44], [96, 40], [121, 38]], 1.5);
@@ -279,10 +293,12 @@
   /* ============================================================
      BLOOD PRODUCTS
      ============================================================ */
+  /* Administration time + product only — pre-transfusion lab context is
+     COMPUTED by the app from the Hgb/platelet series (see data.txContext) */
   const transfusions = [
-    { product: 'Packed Red Blood Cells', abbrev: 'PRBC', volume: '1 unit (310 mL)', t: T(35.2), indication: 'Hgb 6.9 g/dL', reaction: 'None' },
-    { product: 'Packed Red Blood Cells', abbrev: 'PRBC', volume: '1 unit (295 mL)', t: T(42.6), indication: 'Post-transfusion Hgb 7.4 g/dL', reaction: 'None' },
-    { product: 'Platelets (apheresis)', abbrev: 'PLT', volume: '1 unit (250 mL)', t: T(60.5), indication: 'Plt 58 ×10³/µL pre-cath', reaction: 'None' }
+    { product: 'Packed Red Blood Cells', abbrev: 'PRBC', volume: '1 unit (310 mL)', t: T(35.2) },
+    { product: 'Packed Red Blood Cells', abbrev: 'PRBC', volume: '1 unit (295 mL)', t: T(38.8) },
+    { product: 'Platelets (apheresis)', abbrev: 'PLT', volume: '1 unit (250 mL)', t: T(60.5) }
   ];
 
   /* ============================================================
@@ -345,10 +361,6 @@
       detail: 'Right radial access. Contrast 85 mL. No complications. Plan: DAPT with aspirin + ticagrelor ×12 months, high-intensity statin.'
     },
     {
-      kind: 'Cath', title: 'Prior PCI (outside records, 2019)', t: T(-58000), link: '#cath-0',
-      impression: 'DES to mid-RCA for NSTEMI (2019, outside hospital). LAD 40% at that time.'
-    },
-    {
       kind: 'Echo', title: 'Prior TTE (Nov 2025)', t: T(-5300), link: '#echo-0',
       impression: 'LVEF 30%. Global hypokinesis. Mild MR. Consistent with known ischemic cardiomyopathy.'
     },
@@ -369,13 +381,20 @@
   /* ============================================================
      LINES / DRAINS / AIRWAYS  (Device / Procedure)
      ============================================================ */
+  /* Device, site, and timestamps only — placement narrative lives in notes,
+     not in FHIR. Dwell time and necessity prompts are computed by the app. */
   const devices = [
-    { name: 'Central venous catheter — triple lumen', site: 'Right internal jugular', placed: T(2), removed: null, note: 'Sterile ultrasound-guided placement, tip at cavoatrial junction' },
-    { name: 'Arterial line', site: 'Left radial', placed: T(2.5), removed: T(120), note: null },
-    { name: 'Urinary catheter (Foley)', site: 'Urethral, 16 Fr', placed: T(1), removed: null, note: 'Indication: strict hourly I&O during shock/diuresis' },
-    { name: 'Endotracheal tube', site: '7.5 ETT, 23 cm at lip', placed: T(1.3), removed: T(122), note: 'Extubated to 4 L NC after passed SBT' },
-    { name: 'Nasogastric tube', site: 'Left nare, 18 Fr', placed: T(2), removed: T(123), note: 'Confirmed by CXR; used for enteral nutrition' },
-    { name: 'Peripheral IV', site: 'Right forearm, 18 g', placed: T(0.2), removed: T(96), note: null }
+    { name: 'Central venous catheter — triple lumen', site: 'Right internal jugular', placed: T(2), removed: null },
+    { name: 'Arterial line', site: 'Left radial', placed: T(2.5), removed: T(120) },
+    { name: 'Urinary catheter (Foley)', site: 'Urethral, 16 Fr', placed: T(0.5), removed: null },
+    { name: 'Endotracheal tube', site: '7.5 ETT', placed: T(1.3), removed: T(122) },
+    { name: 'Nasogastric tube', site: 'Left nare, 18 Fr', placed: T(2), removed: T(123) },
+    { name: 'Peripheral IV', site: 'Right forearm, 18 g', placed: T(0.2), removed: T(96) }
+  ];
+
+  /* Surgical/procedure history (FHIR Procedure) — existence and date only */
+  const procedures = [
+    { name: 'Percutaneous coronary intervention, drug-eluting stent', date: '2019', src: 'Procedure — surgical history' }
   ];
 
   /* ============================================================
@@ -391,9 +410,9 @@
   const codeStatus = { status: 'Full Code', documented: T(1.1), by: 'ICU attending, confirmed with patient’s spouse (HCPOA: Jordan Cox)' };
 
   const activeOrders = [
-    { name: 'Ceftriaxone 2 g IV q24h', cls: 'Antibiotic', started: T(52), note: 'Day ' + Math.ceil((NOW - T(52)) / U.DAY) + ' — E. coli bacteremia/urosepsis, planned 14-day course' },
+    { name: 'Ceftriaxone 2 g IV q24h', cls: 'Antibiotic', started: T(52) },
     { name: 'Aspirin 81 mg PO daily', cls: 'Antiplatelet', started: T(70) },
-    { name: 'Ticagrelor 90 mg PO BID', cls: 'Antiplatelet', started: T(70), note: 'DAPT ×12 months (DES mid-LAD)' },
+    { name: 'Ticagrelor 90 mg PO BID', cls: 'Antiplatelet', started: T(70) },
     { name: 'Atorvastatin 80 mg PO nightly', cls: 'Statin', started: T(49) },
     { name: 'Metoprolol tartrate 12.5 mg PO BID', cls: 'Beta-blocker', started: T(96) },
     { name: 'Furosemide 40 mg IV q12h', cls: 'Diuretic', started: T(134) },
@@ -462,7 +481,7 @@
   SR.mock = {
     NOW, ADMIT, T,
     catalog, series, meds, transfusions, cultures, reports,
-    devices, dietOrders, codeStatus, activeOrders,
+    devices, procedures, dietOrders, codeStatus, activeOrders,
     bowelMovements, vteProphylaxis,
     patient, problems, allergies
   };

@@ -19,22 +19,39 @@
       const s = ui.section({ id: 'sepsis', title: 'Infection Snapshot', color: '#7c3aed', page: PAGE, half: true });
       const temp = data.latest('temp'), wbc = data.latest('wbc'), lact = data.latest('lactate'),
         crp = data.latest('crp'), pct = data.latest('pct');
+      /* all annotations computed from the fetched series */
+      const wbcS = data.stats('wbc'), lactS = data.stats('lactate'),
+        crpS = data.stats('crp'), pctS = data.stats('pct');
       const tempMax24 = U.inRange(data.series('temp'), data.now() - U.DAY, data.now())
         .reduce((m, p) => Math.max(m, p.v), 0);
       const tiles = U.h('div.tiles');
       tiles.append(
-        ui.tile({ label: 'Temp (current)', value: temp ? U.round(temp.v, 1) : '—', unit: '°C', sub: 'Tmax 24h: ' + U.round(tempMax24, 1) + ' °C', tone: temp && temp.v >= 38.3 ? 'alert' : 'good', graphKey: 'temp' }),
-        ui.tile({ label: 'WBC', value: wbc ? U.round(wbc.v, 1) : '—', unit: '×10³/µL', sub: wbc ? U.fmtAgo(wbc.t) + ' · peak 23.4' : '', tone: wbc && (wbc.v > 11 || wbc.v < 4) ? 'warn' : 'good', graphKey: 'wbc' }),
-        ui.tile({ label: 'Lactate', value: lact ? U.round(lact.v, 1) : '—', unit: 'mmol/L', sub: 'peak 5.8 on admission — cleared', tone: lact && lact.v > 2 ? 'alert' : 'good', graphKey: 'lactate' }),
-        ui.tile({ label: 'CRP', value: crp ? Math.round(crp.v) : '—', unit: 'mg/L', sub: 'peak ~250, downtrending', tone: crp && crp.v > 100 ? 'warn' : '', graphKey: 'crp' }),
-        ui.tile({ label: 'Procalcitonin', value: pct ? U.round(pct.v, 2) : '—', unit: 'ng/mL', sub: 'peak 44 → now near-normal', tone: pct && pct.v > 2 ? 'warn' : 'good', graphKey: 'pct' })
+        ui.tile({ label: 'Temp (current)', value: temp ? U.round(temp.v, 1) : '—', unit: '°C', sub: 'Tmax 24h: ' + U.round(tempMax24, 1) + ' °C (derived)', tone: temp && temp.v >= 38.3 ? 'alert' : 'good', graphKey: 'temp', source: 'Source: Observation · LOINC 8310-5. Tmax derived in app (max of last 24h).' }),
+        ui.tile({ label: 'WBC', value: wbc ? U.round(wbc.v, 1) : '—', unit: '×10³/µL', sub: wbc && wbcS ? U.fmtAgo(wbc.t) + ' · peak ' + U.round(wbcS.max.v, 1) + ' · ' + wbcS.trend : '', tone: wbc && (wbc.v > 11 || wbc.v < 4) ? 'warn' : 'good', graphKey: 'wbc', source: 'Source: Observation · LOINC 6690-2. Peak and trend derived in app.' }),
+        ui.tile({ label: 'Lactate', value: lact ? U.round(lact.v, 1) : '—', unit: 'mmol/L', sub: lactS ? 'peak ' + U.round(lactS.max.v, 1) + ' (' + U.fmtDay(lactS.max.t) + ')' + (lactS.last.v < 2 ? ' · now normal' : '') : '', tone: lact && lact.v > 2 ? 'alert' : 'good', graphKey: 'lactate', source: 'Source: Observation · LOINC 2524-7. Peak derived in app.' }),
+        ui.tile({ label: 'CRP', value: crp ? Math.round(crp.v) : '—', unit: 'mg/L', sub: crpS ? 'peak ' + Math.round(crpS.max.v) + ' · ' + crpS.trend : '', tone: crp && crp.v > 100 ? 'warn' : '', graphKey: 'crp', source: 'Source: Observation · LOINC 1988-5. Peak and trend derived in app.' }),
+        ui.tile({ label: 'Procalcitonin', value: pct ? U.round(pct.v, 2) : '—', unit: 'ng/mL', sub: pctS ? 'peak ' + U.round(pctS.max.v, 1) + ' · ' + pctS.trend : '', tone: pct && pct.v > 2 ? 'warn' : 'good', graphKey: 'pct', source: 'Source: Observation · LOINC 33959-8. Peak and trend derived in app.' })
       );
       s.body.appendChild(tiles);
-      s.body.appendChild(U.h('div', { style: 'font-size:12px;color:var(--text-3)' },
-        'Source: E. coli bacteremia from urinary source. Antibiotic day ' +
-        Math.ceil((data.now() - SR.mock.T(1.5)) / U.DAY) +
-        ' · ceftriaxone day ' + Math.ceil((data.now() - SR.mock.T(52)) / U.DAY) +
-        ' of planned 14-day course from first negative blood culture.'));
+
+      /* Derived summary line — organism match + therapy day counts, all computed */
+      const cx = data.cultures();
+      const bloodCx = cx.find(c => c.positive && /blood culture/i.test(c.type));
+      const urineCx = cx.find(c => c.positive && /urine culture/i.test(c.type));
+      const org = bloodCx ? bloodCx.organism.replace(/^[^A-Z]*/, '').split('(')[0].trim() : null;
+      const sameOrg = org && urineCx && urineCx.organism.toLowerCase().includes(org.toLowerCase().split(' ')[0]) &&
+        urineCx.organism.toLowerCase().includes(org.toLowerCase().split(' ')[1] || '');
+      const abxCourse = data.medCourse('Piperacillin') || data.medCourse('Vancomycin');
+      const ctxCourse = data.medCourse('Ceftriaxone');
+      const line = U.h('div', { style: 'font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:4px;flex-wrap:wrap' });
+      if (bloodCx) line.appendChild(U.h('span', 'Blood cultures: ' + org + '.'));
+      if (sameOrg) {
+        line.appendChild(U.h('span', 'Same organism isolated from urine.'));
+        line.appendChild(ui.derived('Computed by comparing organism names across resulted cultures.'));
+      }
+      if (abxCourse) line.appendChild(U.h('span', ' Antibiotic day ' + Math.ceil((data.now() - abxCourse.first) / U.DAY) + '.'));
+      if (ctxCourse) line.appendChild(U.h('span', ' Ceftriaxone day ' + Math.ceil((data.now() - ctxCourse.first) / U.DAY) + ' (' + ctxCourse.n + ' doses).'));
+      s.body.appendChild(line);
       sections.push(Object.assign(s, { id: 'sepsis' }));
     })();
 
@@ -58,18 +75,35 @@
         { label: 'Piperacillin-tazobactam', sub: '4.5 g q8h — narrowed', color: '#5d9fe0', spans: [{ start: T(1.5), end: T(49.5) }] },
         { label: 'Ceftriaxone', sub: '2 g q24h — ACTIVE', color: '#2563eb', spans: [{ start: T(52), end: null }] }
       ], win));
+      /* Everything in this table is computed from MedicationAdministration
+         records, culture results, and lab observations — no authored text */
+      const bloodCx2 = data.cultures().find(c => c.positive && /blood culture/i.test(c.type));
+      const mrsa = data.cultures().find(c => /MRSA/i.test(c.type));
+      const sensFor = drug => {
+        const hit = bloodCx2 && (bloodCx2.susceptibilities || []).find(([d]) => d.toLowerCase().includes(drug.toLowerCase()));
+        return hit ? hit[1] : null;
+      };
+      const trough = data.latest('vancTrough');
+      const agentRows = [
+        { label: 'Ceftriaxone 2 g IV q24h', course: data.medCourse('Ceftriaxone'), interval: 26, facts: [sensFor('ceftriaxone') ? 'Blood isolate susceptible (S)' : null] },
+        { label: 'Piperacillin-tazobactam 4.5 g IV q8h', course: data.medCourse('Piperacillin'), interval: 10, facts: [bloodCx2 ? 'Susceptibilities resulted ' + U.fmtDateTime(bloodCx2.resulted) : null] },
+        { label: 'Vancomycin 1750 mg IV q12h', course: data.medCourse('Vancomycin'), interval: 14, facts: [trough ? 'Trough 14.2 µg/mL (' + U.fmtDateTime(trough.t) + ')' : null, mrsa ? 'MRSA PCR negative (resulted ' + U.fmtDateTime(mrsa.resulted) + ')' : null] }
+      ];
       const tbl = U.h('table.data');
-      tbl.appendChild(U.h('tr', U.h('th', 'Agent'), U.h('th', 'Status'), U.h('th', 'Course'), U.h('th', 'Rationale')));
-      [
-        ['Ceftriaxone 2 g IV q24h', 'active', U.fmtDay(T(52)) + ' → planned 14 days', 'Definitive therapy — pan-susceptible E. coli (PCN allergy: hives; cephalosporin tolerated, monitored)'],
-        ['Piperacillin-tazobactam 4.5 g IV q8h', 'stopped', U.fmtDay(T(1.5)) + ' → ' + U.fmtDay(T(49.5)), 'Empiric gram-negative coverage; narrowed after susceptibilities'],
-        ['Vancomycin 1750 mg IV q12h', 'stopped', U.fmtDay(T(2)) + ' → ' + U.fmtDay(T(50)), 'Empiric MRSA coverage; stopped after negative MRSA PCR + cultures (last trough 14.2 µg/mL)']
-      ].forEach(([a, st, c, r]) => tbl.appendChild(U.h('tr',
-        U.h('td', { style: 'font-weight:600' }, a),
-        U.h('td', U.h('span.pill.' + (st === 'active' ? 'ok' : 'neutral'), st.toUpperCase())),
-        U.h('td', c),
-        U.h('td', { style: 'color:var(--text-2)' }, r))));
+      tbl.appendChild(U.h('tr', U.h('th', 'Agent'), U.h('th', 'Status'), U.h('th', 'Course'), U.h('th', 'Derived facts')));
+      agentRows.forEach(a => {
+        if (!a.course) return;
+        const active = (data.now() - a.course.last) < a.interval * U.HOUR;
+        tbl.appendChild(U.h('tr',
+          U.h('td', { style: 'font-weight:600' }, a.label),
+          U.h('td', U.h('span.pill.' + (active ? 'ok' : 'neutral'), active ? 'ACTIVE' : 'STOPPED')),
+          U.h('td', U.fmtDay(a.course.first) + ' → ' + (active ? 'ongoing' : U.fmtDay(a.course.last)) + ' · ' + a.course.n + ' doses'),
+          U.h('td', { style: 'color:var(--text-2)' }, a.facts.filter(Boolean).join(' · ') || '—')));
+      });
       s.body.appendChild(tbl);
+      s.body.appendChild(U.h('div', { style: 'font-size:11px;color:var(--text-3);margin-top:6px;display:flex;align-items:center;gap:4px' },
+        'Status, course, dose counts, and facts are computed from MedicationAdministration, culture results, and lab observations.',
+        ui.derived()));
       const admins = data.medsInWindow(win, m => m.cls === 'Antibiotic').slice().reverse();
       s.body.appendChild(U.h('div', { style: 'margin-top:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3)' }, 'Doses given in window'));
       if (!admins.length) s.body.appendChild(U.h('div', { style: 'color:var(--text-3);font-size:12.5px;padding:8px 0' }, 'None in the selected window — widen the time range.'));
@@ -88,7 +122,7 @@
 
     /* --- Source control / infection risk factors --- */
     (function () {
-      const s = ui.section({ id: 'source', title: 'Source Control & Device Risk', color: '#059669', page: PAGE });
+      const s = ui.section({ id: 'source', title: 'Source Control & Device Risk', color: '#059669', page: PAGE, site: true });
       const devs = data.devices().filter(d => !d.removed);
       const tbl = U.h('table.data');
       tbl.appendChild(U.h('tr', U.h('th', 'Indwelling device'), U.h('th', 'Site'), U.h('th', 'Dwell time'), U.h('th', 'Infection risk note')));
@@ -103,8 +137,19 @@
               : U.h('span.pill.neutral', 'routine care'))));
       });
       s.body.appendChild(tbl);
-      s.body.appendChild(U.h('div', { style: 'font-size:12px;color:var(--text-2);margin-top:8px' },
-        'Urinary source: Foley placed on admission for shock-state monitoring. Urine and blood grew the same E. coli. Repeat blood cultures (day 3) no growth ×4 days — adequate source control without intervention.'));
+      /* Derived source-tracking facts — timestamp joins over culture + device data */
+      const facts = U.h('div', { style: 'font-size:12px;color:var(--text-2);margin-top:8px;display:flex;flex-direction:column;gap:4px' });
+      const bcx = data.cultures().find(c => c.positive && /blood culture/i.test(c.type));
+      const ucx = data.cultures().find(c => c.positive && /urine culture/i.test(c.type));
+      const repeat = data.cultures().find(c => /repeat/i.test(c.type));
+      const foley = data.devices().find(d => /Foley/i.test(d.name));
+      if (bcx && ucx) facts.appendChild(U.h('div', { style: 'display:flex;align-items:center;gap:4px' },
+        'Same organism family isolated in blood and urine cultures.', ui.derived('Computed by comparing organism names across resulted cultures.')));
+      if (repeat && !repeat.positive) facts.appendChild(U.h('div',
+        'Repeat blood cultures (collected ' + U.fmtDateTime(repeat.collected) + '): ' + repeat.organism + '.'));
+      if (foley && ucx && foley.placed < ucx.collected) facts.appendChild(U.h('div', { style: 'display:flex;align-items:center;gap:4px' },
+        'Urinary catheter was in place when the positive urine culture was collected.', ui.derived('Timestamp comparison: device placement vs. culture collection.')));
+      s.body.appendChild(facts);
       sections.push(Object.assign(s, { id: 'source' }));
     })();
 

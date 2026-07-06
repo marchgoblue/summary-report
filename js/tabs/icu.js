@@ -57,6 +57,7 @@
         ['Chemistry', ['na', 'k', 'cl', 'co2', 'bun', 'cr', 'gluc', 'mg', 'phos', 'ca']],
         ['Hepatic', ['alt', 'ast', 'tbili', 'alb']],
         ['Cardiac & Inflammatory', ['trop', 'bnp', 'lactate', 'crp', 'pct']],
+        ['Drug Levels', ['vancTrough']],
         ['Arterial Blood Gas', ['ph', 'pco2', 'po2']]
       ];
       groups.forEach(([name, keys]) => {
@@ -68,7 +69,7 @@
 
     /* --- Intake & Output --- */
     (function () {
-      const s = ui.section({ id: 'io', title: 'Intake & Output', color: '#d9c23e', page: PAGE });
+      const s = ui.section({ id: 'io', title: 'Intake & Output', color: '#d9c23e', page: PAGE, site: true });
       s.body.appendChild(ui.ioDays(5));
       s.body.appendChild(ui.rowsGrid(['intake', 'urine', 'ngout', 'net'], PAGE));
       sections.push(Object.assign(s, { id: 'io' }));
@@ -107,10 +108,14 @@
         },
         {
           label: 'Blood products', sub: 'PRBC / PLT', color: '#c0392b',
-          marks: data.transfusions().map(tx => ({
-            t: tx.t,
-            info: `<b>${tx.product}</b><br>${tx.volume} · ${U.fmtDateTime(tx.t)}<br>Indication: ${tx.indication}`
-          }))
+          marks: data.transfusions().map(tx => {
+            const ctx = data.txContext(tx);
+            return {
+              t: tx.t,
+              info: `<b>${tx.product}</b><br>${tx.volume} · ${U.fmtDateTime(tx.t)}` +
+                (ctx ? `<br>Last ${ctx.label} before: <span class="tip-hl">${ctx.v} ${ctx.unit}</span> (${ctx.hrsBefore.toFixed(1)}h prior, derived)` : '')
+            };
+          })
         }
       ], win));
 
@@ -138,13 +143,17 @@
     /* --- Blood products --- */
     (function () {
       const tx = data.transfusions();
-      const s = ui.section({ id: 'blood', title: 'Blood Component Administration', color: '#c0392b', count: tx.length + ' transfusions', page: PAGE });
-      tx.forEach(t => s.body.appendChild(U.h('div.tx-item',
-        U.h('span.tx-dot' + (t.abbrev === 'PLT' ? '.plt' : '')),
-        U.h('span', { style: 'font-weight:700;font-size:13px' }, t.product),
-        U.h('span', { style: 'color:var(--text-2);font-size:12.5px' }, t.volume),
-        U.h('span.pill.neutral', t.indication),
-        U.h('span', { style: 'margin-left:auto;font-size:11.5px;color:var(--text-3)' }, U.fmtDateTime(t.t) + ' · reaction: ' + t.reaction))));
+      const s = ui.section({ id: 'blood', title: 'Blood Component Administration', color: '#c0392b', count: tx.length + ' transfusions', page: PAGE, site: true });
+      tx.forEach(t => {
+        const ctx = data.txContext(t);
+        s.body.appendChild(U.h('div.tx-item',
+          U.h('span.tx-dot' + (t.abbrev === 'PLT' ? '.plt' : '')),
+          U.h('span', { style: 'font-weight:700;font-size:13px' }, t.product),
+          U.h('span', { style: 'color:var(--text-2);font-size:12.5px' }, t.volume),
+          ctx ? U.h('span.pill.neutral', `${ctx.label} ${ctx.v} ${ctx.unit} drawn ${ctx.hrsBefore.toFixed(1)}h prior`) : null,
+          ctx ? ui.derived('Computed by joining the transfusion time against the ' + ctx.label + ' result series.') : null,
+          U.h('span', { style: 'margin-left:auto;font-size:11.5px;color:var(--text-3)' }, U.fmtDateTime(t.t))));
+      });
       s.body.appendChild(U.h('div', { style: 'font-size:11.5px;color:var(--text-3);margin-top:8px' },
         'Tip: transfusion times also appear as red/gold marks on the medication course timeline above — add Hemoglobin or Platelets to the trends graph to correlate.'));
       sections.push(Object.assign(s, { id: 'blood' }));
@@ -152,11 +161,11 @@
 
     /* --- Respiratory / vent --- */
     (function () {
-      const s = ui.section({ id: 'resp', title: 'Respiratory Support', color: '#5d8de0', page: PAGE });
+      const s = ui.section({ id: 'resp', title: 'Respiratory Support', color: '#5d8de0', page: PAGE, site: true });
       const ett = data.devices().find(d => d.name.includes('Endotracheal'));
       s.body.appendChild(U.h('div', { style: 'margin:10px 0 4px' },
         ett && ett.removed
-          ? U.h('span.pill.ok', 'Extubated ' + U.fmtAgo(ett.removed) + ' — now on nasal cannula')
+          ? U.h('span.pill.ok', 'Extubated ' + U.fmtAgo(ett.removed))
           : U.h('span.pill.danger', 'Intubated / mechanically ventilated')));
       s.body.appendChild(ui.rowsGrid(['fio2', 'peep', 'spo2', 'rr'], PAGE));
       sections.push(Object.assign(s, { id: 'resp' }));

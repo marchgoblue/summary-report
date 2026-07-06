@@ -33,6 +33,7 @@
   svc.cultures = () => SR.mock.cultures;
   svc.reports = () => SR.mock.reports;
   svc.devices = () => SR.mock.devices;
+  svc.procedures = () => SR.mock.procedures;
   svc.dietOrders = () => SR.mock.dietOrders;
   svc.codeStatus = () => SR.mock.codeStatus;
   svc.activeOrders = () => SR.mock.activeOrders;
@@ -60,6 +61,53 @@
 
   svc.medsInWindow = function (win, filterFn) {
     return svc.meds().filter(m => m.t >= win.start && m.t <= win.end && (!filterFn || filterFn(m)));
+  };
+
+  /* ---------- derived-in-app calculations ----------
+     Everything below is deterministic math over fetched FHIR data.
+     Nothing is hardcoded and nothing leaves the browser. */
+
+  /* Max/min/latest over this admission (t >= admit) */
+  svc.stats = function (key) {
+    const admit = svc.admitTime();
+    const pts = svc.series(key).filter(p => p.t >= admit);
+    if (!pts.length) return null;
+    let max = pts[0], min = pts[0];
+    pts.forEach(p => { if (p.v > max.v) max = p; if (p.v < min.v) min = p; });
+    const last = pts[pts.length - 1];
+    const prev = pts.length > 1 ? pts[pts.length - 2] : null;
+    let trend = 'stable';
+    if (prev && prev.v !== 0) {
+      const d = (last.v - prev.v) / Math.abs(prev.v);
+      if (d < -0.07) trend = 'falling';
+      else if (d > 0.07) trend = 'rising';
+    }
+    return { max, min, last, trend, n: pts.length };
+  };
+
+  /* Median of pre-admission (historical/outpatient) results — Epic's
+     Observation API returns historicals, so a true baseline is computable */
+  svc.baseline = function (key) {
+    const admit = svc.admitTime();
+    const pre = svc.series(key).filter(p => p.t < admit).map(p => p.v).sort((a, b) => a - b);
+    if (!pre.length) return null;
+    return { v: pre[Math.floor(pre.length / 2)], n: pre.length };
+  };
+
+  /* Last relevant lab before a transfusion (Hgb for PRBC, Plt for platelets) */
+  svc.txContext = function (tx) {
+    const key = /platelet/i.test(tx.product) ? 'plt' : 'hgb';
+    const cat = svc.catalog()[key];
+    const p = U.lastBefore(svc.series(key), tx.t);
+    if (!p) return null;
+    return { label: cat.label, v: U.round(p.v, cat.dp), unit: cat.unit, hrsBefore: (tx.t - p.t) / U.HOUR };
+  };
+
+  /* First/last/count of administrations by med name substring */
+  svc.medCourse = function (nameSub) {
+    const doses = svc.meds().filter(m => m.name.toLowerCase().startsWith(nameSub.toLowerCase()));
+    if (!doses.length) return null;
+    return { first: doses[0].t, last: doses[doses.length - 1].t, n: doses.length };
   };
 
   /* ============================================================
