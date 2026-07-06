@@ -55,7 +55,7 @@
 
     /* --- Labs --- */
     (function () {
-      const s = ui.section({ id: 'labs', title: 'Labs', color: '#5d9fe0', page: PAGE });
+      const s = ui.section({ id: 'labs', title: 'Labs', color: '#5d9fe0', page: PAGE, half: true });
       const groups = [
         ['Hematology', ['wbc', 'hgb', 'hct', 'plt', 'inr', 'ptt']],
         ['Chemistry', ['na', 'k', 'cl', 'co2', 'bun', 'cr', 'gluc', 'mg', 'phos', 'ca']],
