@@ -8,10 +8,36 @@
   const U = SR.U;
   const ui = {};
 
+  /* All in-card sparklines share one color; distinct colors are reserved
+     for the Trends graph, where they're assigned by selection order. */
+  const SPARK_COLOR = '#5b8def';
+
+  /* ---------- shared hover tooltip (gantt bars/marks) ---------- */
+  let tipEl = null;
+  function moveTip(e) {
+    if (!tipEl) return;
+    let x = e.clientX + 14, y = e.clientY + 14;
+    if (x + tipEl.offsetWidth > window.innerWidth - 8) x = e.clientX - tipEl.offsetWidth - 10;
+    if (y + tipEl.offsetHeight > window.innerHeight - 8) y = e.clientY - tipEl.offsetHeight - 10;
+    tipEl.style.left = x + 'px';
+    tipEl.style.top = y + 'px';
+  }
+  ui.attachTip = function (el, html) {
+    el.addEventListener('mouseenter', e => {
+      if (!tipEl) { tipEl = U.h('div.sr-tooltip'); document.body.appendChild(tipEl); }
+      tipEl.innerHTML = html;
+      tipEl.style.display = 'block';
+      moveTip(e);
+    });
+    el.addEventListener('mousemove', moveTip);
+    el.addEventListener('mouseleave', () => { if (tipEl) tipEl.style.display = 'none'; });
+  };
+
   /* ---------- collapsible / customizable section card ---------- */
   ui.section = function (opts) {
-    // opts: {id, title, color, count, page}
+    // opts: {id, title, color, count, page, half}
     const card = U.h('div.card', { dataset: { sec: opts.id } });
+    if (opts.half) card.classList.add('half');
     const body = U.h('div.card-body');
     const collapsedSet = new Set(U.store.get(opts.page + '-collapsed', []));
     if (collapsedSet.has(opts.id)) card.classList.add('collapsed');
@@ -114,7 +140,7 @@
       U.h('span.r-time', last ? U.fmtAgo(last.t) : ''),
       U.h('span.r-spark', U.sparkline(
         sparkPts.length > 160 ? U.bucket(sparkPts, win.start, win.end, (win.end - win.start) / 160, cat.agg || 'mean') : sparkPts,
-        { color: cat.color })),
+        { color: SPARK_COLOR })),
       SR.graph.button(key)
     );
     return row;
@@ -136,7 +162,8 @@
 
   /* ---------- gantt (med courses over the window) ---------- */
   ui.gantt = function (rows, win) {
-    // rows: [{label, sub, color, spans:[{start,end}], marks:[t]}]
+    // rows: [{label, sub, color, spans:[{start, end, info?}], marks:[t | {t, info}]}]
+    // info = HTML shown in the hover tooltip (dose, response data, etc.)
     const wrap = U.h('div.gantt');
     const span = win.end - win.start;
     rows.forEach(r => {
@@ -147,17 +174,21 @@
       (r.spans || []).forEach(s => {
         const a = Math.max(s.start, win.start), b = Math.min(s.end == null ? win.end : s.end, win.end);
         if (b <= win.start || a >= win.end) return;
-        track.appendChild(U.h('span.gantt-bar', {
-          style: `left:${((a - win.start) / span * 100).toFixed(2)}%;width:${((b - a) / span * 100).toFixed(2)}%;background:${r.color}`,
-          title: r.label + ': ' + U.fmtDateTime(a) + ' → ' + (s.end == null ? 'ongoing' : U.fmtDateTime(s.end))
-        }));
+        const bar = U.h('span.gantt-bar', {
+          style: `left:${((a - win.start) / span * 100).toFixed(2)}%;width:${((b - a) / span * 100).toFixed(2)}%;background:${r.color}`
+        });
+        ui.attachTip(bar, s.info ||
+          ('<b>' + r.label + '</b><br>' + U.fmtDateTime(s.start) + ' → ' + (s.end == null ? 'ongoing' : U.fmtDateTime(s.end))));
+        track.appendChild(bar);
       });
-      (r.marks || []).forEach(t => {
+      (r.marks || []).forEach(mk => {
+        const t = typeof mk === 'number' ? mk : mk.t;
         if (t < win.start || t > win.end) return;
-        track.appendChild(U.h('span.gantt-bar', {
-          style: `left:${((t - win.start) / span * 100).toFixed(2)}%;width:5px;background:${r.color};border-radius:99px`,
-          title: r.label + ' — ' + U.fmtDateTime(t)
-        }));
+        const bar = U.h('span.gantt-bar.gantt-mark', {
+          style: `left:${((t - win.start) / span * 100).toFixed(2)}%;width:6px;background:${r.color};border-radius:99px`
+        });
+        ui.attachTip(bar, (mk && mk.info) || ('<b>' + r.label + '</b><br>' + U.fmtDateTime(t)));
+        track.appendChild(bar);
       });
       wrap.appendChild(U.h('div.gantt-row',
         U.h('span.gantt-label', r.label, r.sub ? U.h('span.g-sub', r.sub) : null),

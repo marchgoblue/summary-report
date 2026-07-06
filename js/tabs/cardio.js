@@ -42,10 +42,26 @@
       s.body.appendChild(ui.ioDays(6));
       const T = SR.mock.T;
       const lasixBoluses = data.meds().filter(m => m.cls === 'Diuretic');
+      /* urine output in the 12h after a diuretic dose — shown on hover */
+      const uopNext12h = t => Math.round(
+        U.inRange(data.series('urine'), t, t + 12 * U.HOUR).reduce((sum, p) => sum + p.v, 0));
+      const diureticInfo = m =>
+        `<b>${m.name} ${m.dose} ${m.unit} ${m.route}</b><br>` +
+        U.fmtDateTime(m.t) + '<br>' +
+        `Urine output next 12h: <span class="tip-hl">${uopNext12h(m.t).toLocaleString()} mL</span>`;
+      const txInfo = tx =>
+        `<b>${tx.product}</b><br>${tx.volume} · ${U.fmtDateTime(tx.t)}<br>Indication: ${tx.indication}`;
       s.body.appendChild(ui.gantt([
-        { label: 'Furosemide gtt', sub: '10→5 mg/hr', color: '#3f9e7d', spans: [{ start: T(96), end: T(132) }] },
-        { label: 'Diuretic boluses', sub: 'furosemide / metolazone', color: '#059669', marks: lasixBoluses.map(m => m.t) },
-        { label: 'Blood products', sub: 'volume given', color: '#c0392b', marks: data.transfusions().map(t => t.t) }
+        {
+          label: 'Furosemide gtt', sub: '10→5 mg/hr', color: '#3f9e7d',
+          spans: [{
+            start: T(96), end: T(132),
+            info: `<b>Furosemide infusion 10 → 5 mg/hr</b><br>${U.fmtDateTime(T(96))} → ${U.fmtDateTime(T(132))}<br>` +
+              `Urine output first 12h: <span class="tip-hl">${uopNext12h(T(96)).toLocaleString()} mL</span>`
+          }]
+        },
+        { label: 'Diuretic boluses', sub: 'furosemide / metolazone', color: '#059669', marks: lasixBoluses.map(m => ({ t: m.t, info: diureticInfo(m) })) },
+        { label: 'Blood products', sub: 'volume given', color: '#c0392b', marks: data.transfusions().map(tx => ({ t: tx.t, info: txInfo(tx) })) }
       ], win));
       const rows = U.h('div.rows');
       ['net', 'urine', 'weight', 'bnp', 'cr', 'bun', 'k'].forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });

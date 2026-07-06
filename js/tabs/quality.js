@@ -39,7 +39,7 @@
 
     /* --- Prophylaxis detail --- */
     (function () {
-      const s = ui.section({ id: 'ppx', title: 'Prophylaxis (DVT / Stress Ulcer)', color: '#2563eb', page: PAGE });
+      const s = ui.section({ id: 'ppx', title: 'Prophylaxis (DVT / Stress Ulcer)', color: '#2563eb', page: PAGE, half: true });
       const vte = data.vteProphylaxis();
       const grid = U.h('div.q-grid');
       const dvt = U.h('div');
@@ -124,7 +124,7 @@
     /* --- LDAs --- */
     (function () {
       const devs = data.devices();
-      const s = ui.section({ id: 'lda', title: 'Lines, Drains & Airways (LDAs)', color: '#7c3aed', count: devs.filter(d => !d.removed).length + ' active', page: PAGE });
+      const s = ui.section({ id: 'lda', title: 'Lines, Drains & Airways (LDAs)', color: '#7c3aed', count: devs.filter(d => !d.removed).length + ' active', page: PAGE, half: true });
       devs.slice().sort((a, b) => (a.removed ? 1 : 0) - (b.removed ? 1 : 0)).forEach(d => {
         const active = !d.removed;
         const dwell = ((d.removed || now) - d.placed) / U.DAY;

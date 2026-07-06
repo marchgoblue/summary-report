@@ -17,6 +17,12 @@
     els: {}
   };
 
+  /* Colors are assigned dynamically by selection order (not per-parameter)
+     so simultaneously plotted series are always visually distinct. */
+  const PALETTE = ['#2563eb', '#dc2626', '#059669', '#d97706', '#7c3aed',
+    '#0891b2', '#db2777', '#65a30d', '#475569', '#b45309'];
+  const seriesColor = idx => PALETTE[idx % PALETTE.length];
+
   graph.init = function (host) {
     graph.els.host = host;
     host.classList.add('graph-tray');
@@ -65,10 +71,10 @@
     const { chips, canvasWrap, empty, host } = graph.els;
 
     chips.innerHTML = '';
-    graph.selected.forEach(key => {
+    graph.selected.forEach((key, idx) => {
       const c = cat[key];
       if (!c) return;
-      chips.appendChild(U.h('span.chip', { style: '--chip:' + c.color },
+      chips.appendChild(U.h('span.chip', { style: '--chip:' + seriesColor(idx) },
         U.h('span.chip-dot'),
         c.label + (c.unit ? ' (' + c.unit + ')' : ''),
         U.h('button.chip-x', { onclick: () => graph.toggle(key), title: 'Remove' }, '×')));
@@ -88,16 +94,17 @@
     const datasets = [];
     const axes = {};
     let axisCount = 0;
-    graph.selected.forEach(key => {
+    graph.selected.forEach((key, idx) => {
       const c = cat[key];
+      const color = seriesColor(idx);
       const unitKey = 'y_' + (c.unit || 'unitless').replace(/[^a-z0-9]/gi, '');
       if (!axes[unitKey]) {
         axes[unitKey] = {
           type: 'linear',
           position: axisCount % 2 === 0 ? 'left' : 'right',
           grid: { drawOnChartArea: axisCount === 0, color: 'rgba(140,155,175,.14)' },
-          title: { display: true, text: c.unit || '', color: c.color, font: { size: 11, weight: '600' } },
-          ticks: { color: c.color, font: { size: 10 } },
+          title: { display: true, text: c.unit || '', color: color, font: { size: 11, weight: '600' } },
+          ticks: { color: color, font: { size: 10 } },
           beginAtZero: !!c.agg || !!c.step
         };
         axisCount++;
@@ -109,8 +116,8 @@
         data: pts,
         yAxisID: unitKey,
         type: isBar ? 'bar' : 'line',
-        borderColor: c.color,
-        backgroundColor: isBar ? c.color + '88' : c.color + '22',
+        borderColor: color,
+        backgroundColor: isBar ? color + '88' : color + '22',
         pointRadius: pts.length > 90 ? 0 : 2.5,
         pointHoverRadius: 4,
         borderWidth: 2,

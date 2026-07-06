@@ -16,7 +16,7 @@
 
     /* --- Sepsis snapshot --- */
     (function () {
-      const s = ui.section({ id: 'sepsis', title: 'Infection Snapshot', color: '#7c3aed', page: PAGE });
+      const s = ui.section({ id: 'sepsis', title: 'Infection Snapshot', color: '#7c3aed', page: PAGE, half: true });
       const temp = data.latest('temp'), wbc = data.latest('wbc'), lact = data.latest('lactate'),
         crp = data.latest('crp'), pct = data.latest('pct');
       const tempMax24 = U.inRange(data.series('temp'), data.now() - U.DAY, data.now())
@@ -40,7 +40,7 @@
 
     /* --- Temperature curve + markers --- */
     (function () {
-      const s = ui.section({ id: 'febrile', title: 'Fever Curve & Inflammatory Markers', color: '#e0705d', page: PAGE });
+      const s = ui.section({ id: 'febrile', title: 'Fever Curve & Inflammatory Markers', color: '#e0705d', page: PAGE, half: true });
       s.body.appendChild(U.h('div', { style: 'font-size:12px;color:var(--text-3);margin:8px 0' },
         'Add Temperature + WBC + Procalcitonin to the trends graph — the multi-axis view overlays the fever curve directly on the marker trajectory.'));
       const rows = U.h('div.rows');

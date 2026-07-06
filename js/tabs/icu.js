@@ -24,12 +24,12 @@
 
     /* --- Vitals --- */
     sections.push(Object.assign(rowsSection(
-      { id: 'vitals', title: 'Vitals', color: '#e05d5d' },
+      { id: 'vitals', title: 'Vitals', color: '#e05d5d', half: true },
       ['hr', 'map', 'sbp', 'dbp', 'temp', 'rr', 'spo2', 'cvp', 'weight']), { id: 'vitals' }));
 
     /* --- Drips / hemodynamic support --- */
     (function () {
-      const s = ui.section({ id: 'drips', title: 'Drips & Hemodynamic Support', color: '#c74d6e', page: PAGE });
+      const s = ui.section({ id: 'drips', title: 'Drips & Hemodynamic Support', color: '#c74d6e', page: PAGE, half: true });
       const tiles = U.h('div.tiles');
       const dripKeys = ['norepi', 'vasopressin', 'insulinGtt', 'propofol', 'heparinGtt', 'lasixGtt'];
       dripKeys.forEach(k => {
@@ -74,7 +74,7 @@
 
     /* --- Intake & Output --- */
     (function () {
-      const s = ui.section({ id: 'io', title: 'Intake & Output', color: '#d9c23e', page: PAGE });
+      const s = ui.section({ id: 'io', title: 'Intake & Output', color: '#d9c23e', page: PAGE, half: true });
       s.body.appendChild(ui.ioDays(5));
       const rows = U.h('div.rows');
       ['intake', 'urine', 'ngout', 'net'].forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });
@@ -105,8 +105,21 @@
         { label: 'Piperacillin-tazobactam', sub: 'antibiotic', color: '#5d9fe0', spans: [{ start: T(1.5), end: T(49.5) }] },
         { label: 'Ceftriaxone', sub: 'antibiotic — active', color: '#2563eb', spans: [{ start: T(52), end: null }] },
         { label: 'Heparin gtt', sub: 'NSTEMI', color: '#8d6fd1', spans: [{ start: T(47), end: T(63.5) }] },
-        { label: 'Furosemide', sub: 'diuretic', color: '#3f9e7d', marks: data.meds().filter(m => m.name === 'Furosemide').map(m => m.t), spans: [{ start: T(96), end: T(132) }] },
-        { label: 'Blood products', sub: 'PRBC / PLT', color: '#c0392b', marks: data.transfusions().map(t => t.t) }
+        {
+          label: 'Furosemide', sub: 'diuretic', color: '#3f9e7d',
+          marks: data.meds().filter(m => m.name === 'Furosemide').map(m => ({
+            t: m.t,
+            info: `<b>${m.name} ${m.dose} ${m.unit} ${m.route}</b><br>${U.fmtDateTime(m.t)}`
+          })),
+          spans: [{ start: T(96), end: T(132), info: '<b>Furosemide infusion 10 → 5 mg/hr</b><br>' + U.fmtDateTime(T(96)) + ' → ' + U.fmtDateTime(T(132)) }]
+        },
+        {
+          label: 'Blood products', sub: 'PRBC / PLT', color: '#c0392b',
+          marks: data.transfusions().map(tx => ({
+            t: tx.t,
+            info: `<b>${tx.product}</b><br>${tx.volume} · ${U.fmtDateTime(tx.t)}<br>Indication: ${tx.indication}`
+          }))
+        }
       ], win));
 
       /* class filter + list */
@@ -133,7 +146,7 @@
     /* --- Blood products --- */
     (function () {
       const tx = data.transfusions();
-      const s = ui.section({ id: 'blood', title: 'Blood Component Administration', color: '#c0392b', count: tx.length + ' transfusions', page: PAGE });
+      const s = ui.section({ id: 'blood', title: 'Blood Component Administration', color: '#c0392b', count: tx.length + ' transfusions', page: PAGE, half: true });
       tx.forEach(t => s.body.appendChild(U.h('div.tx-item',
         U.h('span.tx-dot' + (t.abbrev === 'PLT' ? '.plt' : '')),
         U.h('span', { style: 'font-weight:700;font-size:13px' }, t.product),
@@ -147,7 +160,7 @@
 
     /* --- Respiratory / vent --- */
     (function () {
-      const s = ui.section({ id: 'resp', title: 'Respiratory Support', color: '#5d8de0', page: PAGE });
+      const s = ui.section({ id: 'resp', title: 'Respiratory Support', color: '#5d8de0', page: PAGE, half: true });
       const ett = data.devices().find(d => d.name.includes('Endotracheal'));
       s.body.appendChild(U.h('div', { style: 'margin:10px 0 4px' },
         ett && ett.removed
