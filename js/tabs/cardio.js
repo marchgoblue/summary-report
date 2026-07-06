@@ -63,9 +63,7 @@
         { label: 'Diuretic boluses', sub: 'furosemide / metolazone', color: '#059669', marks: lasixBoluses.map(m => ({ t: m.t, info: diureticInfo(m) })) },
         { label: 'Blood products', sub: 'volume given', color: '#c0392b', marks: data.transfusions().map(tx => ({ t: tx.t, info: txInfo(tx) })) }
       ], win));
-      const rows = U.h('div.rows');
-      ['net', 'urine', 'weight', 'bnp', 'cr', 'bun', 'k'].forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });
-      s.body.appendChild(rows);
+      s.body.appendChild(ui.rowsGrid(['net', 'urine', 'weight', 'bnp', 'cr', 'bun', 'k'], PAGE));
       const dia = lasixBoluses.slice().reverse().slice(0, 8);
       s.body.appendChild(U.h('div', { style: 'margin-top:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3)' }, 'Recent diuretic doses'));
       dia.forEach(m => s.body.appendChild(ui.medItem(m)));
@@ -75,9 +73,7 @@
     /* --- NSTEMI / ischemia --- */
     (function () {
       const s = ui.section({ id: 'ischemia', title: 'Ischemia — NSTEMI Workup & Treatment', color: '#dc2626', page: PAGE });
-      const rows = U.h('div.rows');
-      ['trop', 'hr', 'map'].forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });
-      s.body.appendChild(rows);
+      s.body.appendChild(ui.rowsGrid(['trop', 'hr', 'map'], PAGE));
 
       s.body.appendChild(U.h('div', { style: 'margin-top:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3)' }, 'Angiography'));
       data.reports().filter(r => r.kind === 'Cath').sort((a, b) => b.t - a.t)

@@ -140,10 +140,82 @@
       U.h('span.r-time', last ? U.fmtAgo(last.t) : ''),
       U.h('span.r-spark', U.sparkline(
         sparkPts.length > 160 ? U.bucket(sparkPts, win.start, win.end, (win.end - win.start) / 160, cat.agg || 'mean') : sparkPts,
-        { color: SPARK_COLOR })),
+        { color: SPARK_COLOR, width: opts.sparkWidth || 120 })),
       SR.graph.button(key)
     );
     return row;
+  };
+
+  /* ---------- parameter rows flowing into two columns ----------
+     Fills full-width cards: reads top-to-bottom in the left column,
+     then the right. Sparklines get more room than single-column. */
+  ui.rowsGrid = function (keys, page, opts) {
+    const wrap = U.h('div.rows.cols-2');
+    const rows = keys.map(k => ui.paramRow(k, page, Object.assign({ sparkWidth: 170 }, opts))).filter(Boolean);
+    wrap.style.setProperty('--nrows', Math.ceil(rows.length / 2));
+    rows.forEach(r => wrap.appendChild(r));
+    return wrap;
+  };
+
+  /* ---------- labs: results-over-time table ----------
+     Epic-results-review style: the time window is split into
+     columns, each cell holds the last value in that bucket;
+     Latest is emphasized. Graph button + include/exclude kept
+     per analyte. */
+  ui.labTable = function (keys, page) {
+    const win = SR.state.window();
+    const range = win.end - win.start;
+    const nCols = range > 3 * U.DAY ? Math.round(range / U.DAY) : 6;
+    const colMs = range / nCols;
+    const colLabel = t =>
+      colMs >= 20 * U.HOUR ? U.fmtDay(t) :
+        range > 2 * U.DAY ? U.fmtDay(t) + ' ' + U.fmtTime(t) : U.fmtTime(t);
+
+    const tbl = U.h('table.data.labtbl');
+    const head = U.h('tr', U.h('th.lab-name', ''));
+    for (let i = 0; i < nCols; i++) head.appendChild(U.h('th', colLabel(win.start + i * colMs)));
+    head.append(U.h('th', 'Latest'), U.h('th', ''));
+    tbl.appendChild(head);
+
+    const hiddenRows = new Set(U.store.get(page + '-hidden-rows', []));
+    keys.forEach(key => {
+      const cat = SR.data.catalog()[key];
+      if (!cat) return;
+      const series = SR.data.series(key);
+      const flagCls = v => {
+        const f = U.flag(v, cat.lo, cat.hi, cat.critLo, cat.critHi);
+        return f ? '.val-' + f : '';
+      };
+      const tr = U.h('tr', { dataset: { rowid: key } });
+      if (hiddenRows.has(key)) tr.classList.add('hidden-row');
+      tr.appendChild(U.h('td.lab-name',
+        U.h('button.eye-btn', {
+          title: 'Include / exclude',
+          onclick: () => {
+            tr.classList.toggle('hidden-row');
+            const set = new Set(U.store.get(page + '-hidden-rows', []));
+            tr.classList.contains('hidden-row') ? set.add(key) : set.delete(key);
+            U.store.set(page + '-hidden-rows', [...set]);
+          },
+          html: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>'
+        }),
+        cat.label, U.h('span.lab-unit', cat.unit || '')));
+      for (let i = 0; i < nCols; i++) {
+        const a = win.start + i * colMs, b = a + colMs;
+        let v = null;
+        for (const p of series) { if (p.t >= a && p.t < b) v = p.v; if (p.t >= b) break; }
+        tr.appendChild(v == null
+          ? U.h('td.muted', '–')
+          : U.h('td' + flagCls(v), String(U.round(v, cat.dp))));
+      }
+      const last = U.lastPoint(series);
+      tr.appendChild(last
+        ? U.h('td.latest' + flagCls(last.v), { title: U.fmtDateTime(last.t) + ' (' + U.fmtAgo(last.t) + ')' }, String(U.round(last.v, cat.dp)))
+        : U.h('td.muted.latest', '–'));
+      tr.appendChild(U.h('td', { style: 'text-align:right' }, SR.graph.button(key)));
+      tbl.appendChild(tr);
+    });
+    return tbl;
   };
 
   /* ---------- med administration line ---------- */

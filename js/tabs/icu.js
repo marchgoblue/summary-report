@@ -10,9 +10,7 @@
 
   function rowsSection(opts, keys) {
     const s = ui.section(Object.assign({ page: PAGE }, opts));
-    const rows = U.h('div.rows');
-    keys.forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });
-    s.body.appendChild(rows);
+    s.body.appendChild(ui.rowsGrid(keys, PAGE));
     return s;
   }
 
@@ -24,12 +22,12 @@
 
     /* --- Vitals --- */
     sections.push(Object.assign(rowsSection(
-      { id: 'vitals', title: 'Vitals', color: '#e05d5d', half: true },
+      { id: 'vitals', title: 'Vitals', color: '#e05d5d' },
       ['hr', 'map', 'sbp', 'dbp', 'temp', 'rr', 'spo2', 'cvp', 'weight']), { id: 'vitals' }));
 
     /* --- Drips / hemodynamic support --- */
     (function () {
-      const s = ui.section({ id: 'drips', title: 'Drips & Hemodynamic Support', color: '#c74d6e', page: PAGE, half: true });
+      const s = ui.section({ id: 'drips', title: 'Drips & Hemodynamic Support', color: '#c74d6e', page: PAGE });
       const tiles = U.h('div.tiles');
       const dripKeys = ['norepi', 'vasopressin', 'insulinGtt', 'propofol', 'heparinGtt', 'lasixGtt'];
       dripKeys.forEach(k => {
@@ -47,15 +45,13 @@
         }));
       });
       s.body.appendChild(tiles);
-      const rows = U.h('div.rows');
-      dripKeys.forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });
-      s.body.appendChild(rows);
+      s.body.appendChild(ui.rowsGrid(dripKeys, PAGE));
       sections.push(Object.assign(s, { id: 'drips' }));
     })();
 
     /* --- Labs --- */
     (function () {
-      const s = ui.section({ id: 'labs', title: 'Labs', color: '#5d9fe0', page: PAGE, half: true });
+      const s = ui.section({ id: 'labs', title: 'Labs', color: '#5d9fe0', page: PAGE });
       const groups = [
         ['Hematology', ['wbc', 'hgb', 'hct', 'plt', 'inr', 'ptt']],
         ['Chemistry', ['na', 'k', 'cl', 'co2', 'bun', 'cr', 'gluc', 'mg', 'phos', 'ca']],
@@ -64,21 +60,17 @@
         ['Arterial Blood Gas', ['ph', 'pco2', 'po2']]
       ];
       groups.forEach(([name, keys]) => {
-        s.body.appendChild(U.h('div', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3);margin:12px 0 2px' }, name));
-        const rows = U.h('div.rows');
-        keys.forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });
-        s.body.appendChild(rows);
+        s.body.appendChild(U.h('div', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3);margin:14px 0 4px' }, name));
+        s.body.appendChild(ui.labTable(keys, PAGE));
       });
       sections.push(Object.assign(s, { id: 'labs' }));
     })();
 
     /* --- Intake & Output --- */
     (function () {
-      const s = ui.section({ id: 'io', title: 'Intake & Output', color: '#d9c23e', page: PAGE, half: true });
+      const s = ui.section({ id: 'io', title: 'Intake & Output', color: '#d9c23e', page: PAGE });
       s.body.appendChild(ui.ioDays(5));
-      const rows = U.h('div.rows');
-      ['intake', 'urine', 'ngout', 'net'].forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });
-      s.body.appendChild(rows);
+      s.body.appendChild(ui.rowsGrid(['intake', 'urine', 'ngout', 'net'], PAGE));
       sections.push(Object.assign(s, { id: 'io' }));
     })();
 
@@ -146,7 +138,7 @@
     /* --- Blood products --- */
     (function () {
       const tx = data.transfusions();
-      const s = ui.section({ id: 'blood', title: 'Blood Component Administration', color: '#c0392b', count: tx.length + ' transfusions', page: PAGE, half: true });
+      const s = ui.section({ id: 'blood', title: 'Blood Component Administration', color: '#c0392b', count: tx.length + ' transfusions', page: PAGE });
       tx.forEach(t => s.body.appendChild(U.h('div.tx-item',
         U.h('span.tx-dot' + (t.abbrev === 'PLT' ? '.plt' : '')),
         U.h('span', { style: 'font-weight:700;font-size:13px' }, t.product),
@@ -160,15 +152,13 @@
 
     /* --- Respiratory / vent --- */
     (function () {
-      const s = ui.section({ id: 'resp', title: 'Respiratory Support', color: '#5d8de0', page: PAGE, half: true });
+      const s = ui.section({ id: 'resp', title: 'Respiratory Support', color: '#5d8de0', page: PAGE });
       const ett = data.devices().find(d => d.name.includes('Endotracheal'));
       s.body.appendChild(U.h('div', { style: 'margin:10px 0 4px' },
         ett && ett.removed
           ? U.h('span.pill.ok', 'Extubated ' + U.fmtAgo(ett.removed) + ' — now on nasal cannula')
           : U.h('span.pill.danger', 'Intubated / mechanically ventilated')));
-      const rows = U.h('div.rows');
-      ['fio2', 'peep', 'spo2', 'rr'].forEach(k => { const r = ui.paramRow(k, PAGE); if (r) rows.appendChild(r); });
-      s.body.appendChild(rows);
+      s.body.appendChild(ui.rowsGrid(['fio2', 'peep', 'spo2', 'rr'], PAGE));
       sections.push(Object.assign(s, { id: 'resp' }));
     })();
 
